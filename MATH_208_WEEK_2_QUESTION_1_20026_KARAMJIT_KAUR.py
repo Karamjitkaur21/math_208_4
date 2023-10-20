@@ -1,49 +1,75 @@
-def encoding(msg, poly):
-    # Append zeros for the CRC remainder
-    msg += '0' * (len(poly) - 1)
-    msg = list(msg)
-    
-    # Perform polynomial division
-    for i in range(len(msg) - len(poly) + 1):
-        if msg[i] == '1':
-            for j in range(len(poly)):
-                msg[i + j] = '1' if msg[i + j] != poly[j] else '0'
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
-    # Append the CRC remainder to the original message
-    encoded_msg = ''.join(msg)
+# Define a function to calculate the mean
+def calculate_mean(data):
+    return sum(data) / len(data)
 
-    return encoded_msg
+# Define a function to calculate the variance
+def calculate_variance(data):
+    mean = calculate_mean(data)
+    return sum((x - mean) ** 2 for x in data) / (len(data) - 1)
 
-def decoding(rcv, poly):
-    rcv = list(rcv)
-    
-    # Perform polynomial division
-    for i in range(len(rcv) - len(poly) + 1):
-        if rcv[i] == '1':
-            for j in range(len(poly)):
-                rcv[i + j] = '1' if rcv[i + j] != poly[j] else '0'
+# Define a function to calculate the standard deviation
+def calculate_std_deviation(data):
+    return calculate_variance(data) ** 0.5
 
-    # Check if the remainder is zero to detect errors
-    if '1' in rcv:
-        return 'Error'
+# Define a function to calculate z-scores
+def calculate_z_scores(data):
+    mean = calculate_mean(data)
+    std_dev = calculate_std_deviation(data)
+    return [(x - mean) / std_dev for x in data]
+
+# Define a function to calculate the median
+def calculate_median(data):
+    sorted_data = sorted(data)
+    n = len(sorted_data)
+    if n % 2 == 0:
+        median = (sorted_data[n // 2 - 1] + sorted_data[n // 2]) / 2
     else:
-        return 'No error'
+        median = sorted_data[n // 2]
+    return median
 
-# Test cases
-org_sig1 = '1010'
-poly = '100101'
-encoded_output1 = encoding(org_sig1, poly)
-print(encoded_output1)  # Output: '101000111'
+# Read data from the Excel file
+file_path = "./diabetes.xlsx"
+data = pd.read_excel(file_path)
 
-received_sig1 = '101000111'
-decoding_result1 = decoding(received_sig1, poly)
-print(decoding_result1)  # Output: 'No error'
+# Extract the "Glucose" and "BloodPressure" columns
+glucose_data = data["Glucose"]
+blood_pressure_data = data["BloodPressure"]
 
-org_sig2 = '1100'
-poly = '100101'
-encoded_output2 = encoding(org_sig2, poly)
-print(encoded_output2)  # Output: '110011001'
+# Calculate statistics
+glucose_mean = calculate_mean(glucose_data)
+glucose_variance = calculate_variance(glucose_data)
+glucose_std_dev = calculate_std_deviation(glucose_data)
+glucose_z_scores = calculate_z_scores(glucose_data)
+glucose_median = calculate_median(glucose_data)
 
-received_sig2 = '101001111'
-decoding_result2 = decoding(received_sig2, poly)
-print(decoding_result2)  # Output: 'Error'
+blood_pressure_mean = calculate_mean(blood_pressure_data)
+blood_pressure_variance = calculate_variance(blood_pressure_data)
+blood_pressure_std_dev = calculate_std_deviation(blood_pressure_data)
+blood_pressure_z_scores = calculate_z_scores(blood_pressure_data)
+blood_pressure_median = calculate_median(blood_pressure_data)
+
+# Print the statistics
+print("Statistics for Glucose:")
+print(f"Mean: {glucose_mean}")
+print(f"Variance: {glucose_variance}")
+print(f"Standard Deviation: {glucose_std_dev}")
+print(f"Z-Scores: {glucose_z_scores}")
+print(f"Median: {glucose_median}\n")
+
+print("Statistics for Blood Pressure:")
+print(f"Mean: {blood_pressure_mean}")
+print(f"Variance: {blood_pressure_variance}")
+print(f"Standard Deviation: {blood_pressure_std_dev}")
+print(f"Z-Scores: {blood_pressure_z_scores}")
+print(f"Median: {blood_pressure_median}\n")
+
+# Create boxplots
+plt.boxplot([glucose_data, blood_pressure_data], labels=["Glucose", "Blood Pressure"])
+plt.title("Boxplots for Glucose and Blood Pressure")
+plt.xlabel("Variable")
+plt.ylabel("Value")
+plt.show()
